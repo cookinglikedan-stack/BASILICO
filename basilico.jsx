@@ -1,0 +1,602 @@
+import { useState, useEffect, useRef } from "react";
+
+/* ─────────────────────────────────────────────
+   DATOS DEL MENÚ — Edita aquí fácilmente
+───────────────────────────────────────────── */
+const NOVEDAD = {
+  name: "La Hawaiana Basilico",
+  subtitle: "Nuestra versión",
+  desc: "Base de tomate · Queso fontina · Tocino glaseado con miel · Piña asada a la brasa · Chile güerito en vinagre",
+  badge: "¡Quedó bien mamoncita!",
+  price: null,
+};
+
+const MENU_TOMATE = [
+  { name: "Margherita", desc: "Salsa de tomate, mozarella, albahaca", price: 180 },
+  { name: "Pepperoni", desc: "Pepperoni, salsa de tomate, mozarella", price: 180 },
+  {
+    name: "Pamplona",
+    desc: "Chorizo de Pamplona, salsa de tomate, queso fontina, pepinillos de la casa, chile chiltepín",
+    price: 230,
+  },
+];
+
+const MENU_BLANCA = [
+  { name: "Hongos", desc: "Hongos de temporada, queso ahumado", price: 230 },
+  {
+    name: "Mortadella",
+    desc: "Mortadella con pistache, mozarella, burrata, pesto, nuez de la india, blue berry",
+    price: 250,
+  },
+  {
+    name: "Serrano",
+    desc: "Serrano, queso ricotta, durazno, arugula, arándano, grana padano, tartufo",
+    price: 250,
+  },
+  {
+    name: "Quattro Formaggi",
+    desc: "Salsa de grana padano, queso fontina, queso azul, cebolla caramelizada, higo",
+    price: 250,
+  },
+];
+
+const BEBIDAS = [
+  { name: "Coca Cola", price: 30 },
+  { name: "Topo Chico", price: 30 },
+];
+/* ─────────────────────────────────────────────
+   FIN DE DATOS
+───────────────────────────────────────────── */
+
+function useReveal() {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.12 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return [ref, visible];
+}
+
+function MenuItem({ item, delay = 0 }) {
+  const [ref, visible] = useReveal();
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(24px)",
+        transition: `opacity 0.7s ease ${delay}ms, transform 0.7s ease ${delay}ms`,
+        borderBottom: "1px solid rgba(200,164,110,0.15)",
+        padding: "1.1rem 0",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: "1rem",
+        cursor: "default",
+      }}
+      className="menu-item-row"
+    >
+      <div style={{ flex: 1 }}>
+        <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "1.05rem", fontWeight: 600, color: "#F2EDE3", margin: "0 0 0.25rem" }}>
+          {item.name}
+        </p>
+        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.8rem", color: "#8A7A68", margin: 0, lineHeight: 1.5, fontWeight: 300 }}>
+          {item.desc}
+        </p>
+      </div>
+      <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.95rem", fontWeight: 500, color: "#C8A46E", whiteSpace: "nowrap", marginTop: "0.1rem" }}>
+        ${item.price}
+      </span>
+    </div>
+  );
+}
+
+export default function Basilico() {
+  const [tab, setTab] = useState("tomate");
+  const [heroVisible, setHeroVisible] = useState(false);
+  const [novedadRef, novedadVisible] = useReveal();
+  const [menuRef, menuVisible] = useReveal();
+  const [bebidasRef, bebidasVisible] = useReveal();
+
+  useEffect(() => {
+    const t = setTimeout(() => setHeroVisible(true), 100);
+    return () => clearTimeout(t);
+  }, []);
+
+  const items = tab === "tomate" ? MENU_TOMATE : MENU_BLANCA;
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+        * { box-sizing: border-box; }
+
+        body, #root {
+          background: #0A0806;
+          margin: 0;
+          padding: 0;
+        }
+
+        .basilico-root {
+          background: #0A0806;
+          min-height: 100vh;
+          font-family: 'DM Sans', sans-serif;
+          color: #F2EDE3;
+          position: relative;
+          overflow-x: hidden;
+        }
+
+        .grain-overlay {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          opacity: 0.035;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+          background-size: 200px;
+        }
+
+        .content {
+          position: relative;
+          z-index: 1;
+          max-width: 720px;
+          margin: 0 auto;
+          padding: 0 1.5rem;
+        }
+
+        /* ── HERO ── */
+        .hero {
+          min-height: 100svh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 5rem 1.5rem 4rem;
+          position: relative;
+        }
+
+        .hero-eyebrow {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.7rem;
+          letter-spacing: 0.25em;
+          text-transform: uppercase;
+          color: #C8A46E;
+          font-weight: 400;
+          margin: 0 0 1.5rem;
+          opacity: 0;
+          transform: translateY(16px);
+          transition: opacity 0.8s ease 0.1s, transform 0.8s ease 0.1s;
+        }
+        .hero-eyebrow.vis { opacity: 1; transform: translateY(0); }
+
+        .hero-title {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: clamp(3.5rem, 14vw, 8rem);
+          font-weight: 900;
+          line-height: 0.92;
+          letter-spacing: -0.02em;
+          color: #F2EDE3;
+          margin: 0 0 2rem;
+          opacity: 0;
+          transform: translateY(24px);
+          transition: opacity 0.9s ease 0.25s, transform 0.9s ease 0.25s;
+        }
+        .hero-title.vis { opacity: 1; transform: translateY(0); }
+        .hero-title em {
+          font-style: italic;
+          color: #C8A46E;
+        }
+
+        .hero-sub {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.78rem;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #5A5349;
+          font-weight: 400;
+          margin: 0 0 3rem;
+          opacity: 0;
+          transition: opacity 0.8s ease 0.5s;
+        }
+        .hero-sub.vis { opacity: 1; }
+
+        .hero-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.6rem;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.78rem;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          font-weight: 500;
+          color: #0A0806;
+          background: #C8A46E;
+          border: none;
+          padding: 0.9rem 2.2rem;
+          cursor: pointer;
+          text-decoration: none;
+          transition: background 0.25s ease, transform 0.2s ease;
+          opacity: 0;
+          transform: translateY(12px);
+          transition: opacity 0.8s ease 0.7s, transform 0.8s ease 0.7s, background 0.25s ease;
+        }
+        .hero-btn:hover { background: #D4B882; transform: translateY(-2px); }
+        .hero-btn.vis { opacity: 1; transform: translateY(0); }
+        .hero-btn:hover { transform: translateY(-2px); }
+
+        .hero-scroll {
+          position: absolute;
+          bottom: 2rem;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.4rem;
+          opacity: 0;
+          transition: opacity 1s ease 1.2s;
+        }
+        .hero-scroll.vis { opacity: 0.4; }
+        .hero-scroll-line {
+          width: 1px;
+          height: 40px;
+          background: linear-gradient(to bottom, #C8A46E, transparent);
+          animation: scrollPulse 2s ease-in-out infinite;
+        }
+        @keyframes scrollPulse {
+          0%, 100% { opacity: 0.3; transform: scaleY(1); }
+          50% { opacity: 1; transform: scaleY(1.1); }
+        }
+
+        /* ── DIVIDER ── */
+        .divider {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          margin: 0 0 3rem;
+        }
+        .divider-line { flex: 1; height: 1px; background: rgba(200,164,110,0.2); }
+        .divider-dot { width: 5px; height: 5px; background: #C8A46E; border-radius: 50%; }
+
+        /* ── NOVEDAD ── */
+        .novedad-section { padding: 5rem 0; }
+
+        .section-label {
+          font-size: 0.65rem;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          color: #C8A46E;
+          font-weight: 400;
+          margin: 0 0 1.5rem;
+          display: block;
+        }
+
+        .novedad-card {
+          border: 1px solid rgba(200,164,110,0.3);
+          padding: 2.5rem;
+          position: relative;
+          background: rgba(200,164,110,0.04);
+          overflow: hidden;
+          transition: border-color 0.3s ease;
+        }
+        .novedad-card:hover { border-color: rgba(200,164,110,0.6); }
+
+        .novedad-corner {
+          position: absolute;
+          top: 0; right: 0;
+          width: 60px; height: 60px;
+          border-bottom: 1px solid rgba(200,164,110,0.3);
+          border-left: 1px solid rgba(200,164,110,0.3);
+          pointer-events: none;
+        }
+        .novedad-corner-bl {
+          position: absolute;
+          bottom: 0; left: 0;
+          width: 60px; height: 60px;
+          border-top: 1px solid rgba(200,164,110,0.3);
+          border-right: 1px solid rgba(200,164,110,0.3);
+          pointer-events: none;
+        }
+
+        .novedad-subtitle {
+          font-family: 'Playfair Display', serif;
+          font-style: italic;
+          font-size: 0.9rem;
+          color: #C8A46E;
+          margin: 0 0 0.5rem;
+        }
+
+        .novedad-title {
+          font-family: 'Playfair Display', Georgia, serif;
+          font-size: clamp(2rem, 6vw, 3.2rem);
+          font-weight: 700;
+          line-height: 1.05;
+          color: #F2EDE3;
+          margin: 0 0 1.5rem;
+          letter-spacing: -0.01em;
+        }
+
+        .novedad-desc {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.88rem;
+          color: #8A7A68;
+          line-height: 1.9;
+          font-weight: 300;
+          margin: 0 0 2rem;
+          letter-spacing: 0.02em;
+        }
+
+        .novedad-badge {
+          display: inline-block;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.72rem;
+          letter-spacing: 0.08em;
+          color: #0A0806;
+          background: #C8A46E;
+          padding: 0.45rem 1.2rem;
+          font-weight: 500;
+        }
+
+        /* ── MENU ── */
+        .menu-section { padding: 5rem 0; }
+
+        .menu-tabs {
+          display: flex;
+          gap: 0;
+          margin-bottom: 2.5rem;
+          border-bottom: 1px solid rgba(200,164,110,0.2);
+        }
+
+        .menu-tab {
+          font-family: 'DM Sans', sans-serif;
+          font-size: 0.72rem;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          font-weight: 500;
+          color: #5A5349;
+          background: none;
+          border: none;
+          padding: 0.9rem 1.5rem 0.9rem 0;
+          cursor: pointer;
+          position: relative;
+          transition: color 0.25s ease;
+        }
+        .menu-tab::after {
+          content: '';
+          position: absolute;
+          bottom: -1px; left: 0;
+          width: 0; height: 2px;
+          background: #C8A46E;
+          transition: width 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .menu-tab.active { color: #C8A46E; }
+        .menu-tab.active::after { width: 100%; }
+        .menu-tab:hover { color: #C8A46E; }
+
+        .menu-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 0;
+        }
+
+        @media (min-width: 600px) {
+          .menu-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 0 3rem;
+          }
+        }
+
+        .menu-item-row {
+          transition: background 0.2s ease;
+          border-radius: 0;
+        }
+        .menu-item-row:hover .menu-item-name {
+          color: #C8A46E !important;
+        }
+
+        /* ── BEBIDAS ── */
+        .bebidas-section {
+          padding: 3rem 0 6rem;
+          border-top: 1px solid rgba(200,164,110,0.15);
+          margin-top: 2rem;
+        }
+
+        .bebidas-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.7rem 0;
+          border-bottom: 1px solid rgba(200,164,110,0.08);
+          font-size: 0.85rem;
+          color: #5A5349;
+        }
+
+        /* ── FOOTER ── */
+        .site-footer {
+          padding: 3rem 0;
+          text-align: center;
+          border-top: 1px solid rgba(200,164,110,0.1);
+        }
+        .footer-logo {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.5rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          color: #2A2318;
+          margin-bottom: 0.5rem;
+        }
+        .footer-copy {
+          font-size: 0.7rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #2A2318;
+        }
+
+        /* Tab content animation */
+        .tab-content {
+          animation: fadeUp 0.4s ease forwards;
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
+      <div className="basilico-root">
+        <div className="grain-overlay" />
+
+        {/* ── HERO ── */}
+        <section className="hero">
+          <div style={{ maxWidth: "640px", width: "100%" }}>
+            <p className={`hero-eyebrow${heroVisible ? " vis" : ""}`}>
+              Pizzería Artesanal · Ciudad de México
+            </p>
+            <h1 className={`hero-title${heroVisible ? " vis" : ""}`}>
+              BASI<em>LICO</em>
+            </h1>
+            <p className={`hero-sub${heroVisible ? " vis" : ""}`}>
+              Masa de fermentación lenta · Horneadas a alta temperatura
+            </p>
+            <a
+              href="https://www.instagram.com/basilicoooooo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`hero-btn${heroVisible ? " vis" : ""}`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+              </svg>
+              @basilicoooooo
+            </a>
+          </div>
+
+          <div className={`hero-scroll${heroVisible ? " vis" : ""}`}>
+            <div className="hero-scroll-line" />
+          </div>
+        </section>
+
+        {/* ── NOVEDAD ── */}
+        <section className="novedad-section">
+          <div className="content">
+            <div
+              ref={novedadRef}
+              style={{
+                opacity: novedadVisible ? 1 : 0,
+                transform: novedadVisible ? "translateY(0)" : "translateY(32px)",
+                transition: "opacity 0.9s ease, transform 0.9s ease",
+              }}
+            >
+              <span className="section-label">Novedad de la casa</span>
+
+              <div className="novedad-card">
+                <div className="novedad-corner" />
+                <div className="novedad-corner-bl" />
+
+                <p className="novedad-subtitle">Nuestra versión de la</p>
+                <h2 className="novedad-title">Hawaiana<br />Basilico</h2>
+
+                <p className="novedad-desc">
+                  Base de tomate &nbsp;·&nbsp; Queso fontina &nbsp;·&nbsp; Tocino glaseado con miel<br />
+                  Piña asada a la brasa &nbsp;·&nbsp; Chile güerito en vinagre
+                </p>
+
+                <span className="novedad-badge">¡Quedó bien mamoncita!</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── MENÚ ── */}
+        <section className="menu-section">
+          <div className="content">
+            <div
+              ref={menuRef}
+              style={{
+                opacity: menuVisible ? 1 : 0,
+                transform: menuVisible ? "translateY(0)" : "translateY(24px)",
+                transition: "opacity 0.8s ease, transform 0.8s ease",
+              }}
+            >
+              <span className="section-label">El menú</span>
+
+              <div className="divider">
+                <div className="divider-line" />
+                <div className="divider-dot" />
+                <div className="divider-line" />
+              </div>
+
+              <div className="menu-tabs">
+                <button
+                  className={`menu-tab${tab === "tomate" ? " active" : ""}`}
+                  onClick={() => setTab("tomate")}
+                >
+                  Base Tomate
+                </button>
+                <button
+                  className={`menu-tab${tab === "blanca" ? " active" : ""}`}
+                  onClick={() => setTab("blanca")}
+                >
+                  Base Blanca
+                </button>
+              </div>
+
+              <div key={tab} className="menu-grid tab-content">
+                {items.map((item, i) => (
+                  <MenuItem key={item.name} item={item} delay={i * 80} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── BEBIDAS ── */}
+        <section style={{ padding: "0 0 5rem" }}>
+          <div className="content">
+            <div
+              ref={bebidasRef}
+              style={{
+                opacity: bebidasVisible ? 1 : 0,
+                transform: bebidasVisible ? "translateY(0)" : "translateY(20px)",
+                transition: "opacity 0.8s ease, transform 0.8s ease",
+              }}
+            >
+              <div className="divider">
+                <div className="divider-line" />
+                <div className="divider-dot" />
+                <div className="divider-line" />
+              </div>
+
+              <span className="section-label" style={{ marginBottom: "1rem" }}>Para tomar</span>
+
+              {BEBIDAS.map((b) => (
+                <div className="bebidas-row" key={b.name}>
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: "0.9rem", color: "#8A7A68" }}>
+                    {b.name}
+                  </span>
+                  <span style={{ color: "#C8A46E", fontWeight: 500, fontSize: "0.85rem" }}>${b.price}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── FOOTER ── */}
+        <footer className="site-footer">
+          <div className="content">
+            <p className="footer-logo">BASILICO</p>
+            <p className="footer-copy">Pizzas · Masa de fermentación lenta</p>
+          </div>
+        </footer>
+      </div>
+    </>
+  );
+}
